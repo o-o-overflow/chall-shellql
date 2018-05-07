@@ -1,0 +1,64 @@
+---
+- hosts: all
+
+  # These next two are some tricks b/c some EC2 machines don't have python, the monsters
+  gather_facts: False
+  
+  pre_tasks:
+    - raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+      tags:
+        - always
+    - setup:
+  
+
+  tasks:
+
+    - name: Run the equivalent of "apt-get update" as a separate step
+      apt:
+        update_cache: yes
+      tags:
+        packages
+
+
+    - name: Update all packages to the latest version
+      apt:
+        upgrade: dist
+      tags:
+        packages
+
+    - name: install required packages
+      package: name={{ item }} state=latest update_cache=yes
+      with_items:
+        - byobu
+        - php7.0-cgi        
+        - php7.0-dev
+        - apache2
+      tags:
+        packages
+
+    - name: remove default html file
+      file:
+        path: "/var/www/html/index.html"
+        state: absent
+
+    - name: copy www files
+      copy:
+        src: "./www/{{ item }}"
+        dest: /var/www/html
+        mode: 0444
+        owner: root
+        group: root
+      with_items:
+        - index.php
+
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+        
+        
+
+        
+        
+        
+
+        
