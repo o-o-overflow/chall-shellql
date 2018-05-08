@@ -5,5 +5,5 @@ setup-lb.retry
 setup-www.retry
 setup.retry
 ubuntu-xenial-16.04-cloudimg-console.log
-dev/next-software
-dev/next-step-stuff
+src/c/*.o
+src/c/*.so

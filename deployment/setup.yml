@@ -33,6 +33,8 @@
         - php7.0-cgi        
         - php7.0-dev
         - apache2
+        - mysql-server
+        - php-mysql
       tags:
         packages
 
@@ -41,15 +43,106 @@
         path: "/var/www/html/index.html"
         state: absent
 
+    - name: create cgi-bin directory
+      file:
+        path: "/var/www/html/cgi-bin"
+        owner: root
+        group: root
+        mode: 0755
+        state: directory
+
     - name: copy www files
       copy:
         src: "./www/{{ item }}"
-        dest: /var/www/html
-        mode: 0444
+        dest: /var/www/html/cgi-bin
+        mode: 0555
         owner: root
         group: root
       with_items:
         - index.php
+
+    - name: copy html files
+      copy:
+        src: "./www/index.html"
+        dest: /var/www/html/index.html
+        mode: 0444
+        owner: root
+        group: root
+
+    - name: apache2 config
+      copy:
+        src: "./000-default.conf"
+        dest: /etc/apache2/sites-available/000-default.conf
+        mode: 0644
+        owner: root
+        group: root
+      notify:
+        - restart apache2
+
+    - name: enable cgi module
+      shell: /usr/sbin/a2enmod cgi
+      args:
+        creates: /etc/apache2/mods-enabled/cgi.load
+      notify:
+        - restart apache2
+
+    - name: remove default cgi-bin handling
+      file:
+        path: "/etc/apache2/conf-enabled/serve-cgi-bin.conf"
+        state: absent
+      notify:
+        - restart apache2
+
+    - name: install php-cgi php.ini
+      copy:
+        src: "./php.ini"
+        dest: /etc/php/7.0/cgi/php.ini
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: copy shellme.so to correct location
+      copy:
+        src: "./shellme.so"
+        dest: "/usr/lib/php/20151012/shellme.so"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart apache2
+
+    - name: copy the db files
+      copy:
+        src: "./www/db.sql"
+        dest: "/root/db.sql"
+        owner: root
+        group: root
+        mode: 0400
+
+    - name: load the db files
+      shell: mysql shellql -e "select count(*) from flag" || mysql < /root/db.sql
+
+    - name: install libphpcpp
+      copy:
+        src: "./libphpcpp.so.2.0.0"
+        dest: "/usr/lib/libphpcpp.so.2.0.0"
+        owner: root
+        group: root
+        mode: 0755
+      notify:
+        - restart apache2
+
+    - name: link for other versions of libphpcpp
+      file:
+        src: "/usr/lib/libphpcpp.so.2.0.0"
+        dest: "{{ item }}"
+        state: link
+      with_items:
+        - /usr/lib/libphpcpp.so.2.0
+        - /usr/lib/libphpcpp.so
+      notify:
+        - restart apache2
+      
 
   handlers:
     - name: restart apache2
