@@ -1,6 +1,9 @@
 id: "shellql" # this needs to be a single word, no spaces
 title: "shellql" # this is the title that will show up on the scoreboard
-description: "Do you even SQL? The flag is in the table `flag`"
+description: |
+  Do you even SQL? The flag is in the table `flag`
+
+  http://b9d6d408.quals2018.oooverflow.io
 # list of files that should be public (these will be made available via the scoreboard)
 public_files: [
   "./public_files/shellme.so",
